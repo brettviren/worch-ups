@@ -1,0 +1,23 @@
+worch-ups - worch tool/feature support for UPS operations
+
+This package provides worch/waf tools and features which may be used from a [[https://github.com/brettviren/worch][worch]] configuration to add support for producing [[https://cdcvs.fnal.gov/redmine/projects/ups][UPS]] "products".
+
+* Usage
+
+The tools provided by this package as Python modules need to be
+accessible by the Python run by waf/worch.  There are several ways to
+do this.
+
+** Virtualenv + Pip
+
+This is recommended.
+
+#+BEGIN_EXAMPLE
+  $ virtualenv venv
+  $ source venv/bin/activate
+  $ pip install git+git://github.com/brettviren/python-ups-utils.git
+  $ pip install git+git://github.com/brettviren/worch-ups.git
+#+END_EXAMPLE
+
+
+

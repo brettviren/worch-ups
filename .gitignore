@@ -1,0 +1,6 @@
+*~
+*.pyc
+.waf-*
+.lock-waf*
+tmp
+venv
