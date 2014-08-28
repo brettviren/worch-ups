@@ -8,8 +8,12 @@ setup(name = 'worch-ups',
       url = 'http://github.com/brettviren/worch-ups',
       namespace_packages = ['worch'],
       packages = ['worch','worch.upstools'],
-      install_requires = ['ups_utils == 0.0'],
+      install_requires = [
+          'worch',
+          'ups_utils'
+      ],
       dependency_links = [
-          'http://github.com/brettviren/python-ups-utils/tarball/master#egg=ups_utils-0.0',
+          'http://github.com/brettviren/worch/tarball/proper-install#egg=worch',
+          'http://github.com/brettviren/python-ups-utils/tarball/master#egg=ups_utils',
       ]
 )
