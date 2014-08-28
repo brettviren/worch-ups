@@ -4,3 +4,6 @@
 .lock-waf*
 tmp
 venv
+build
+dist
+*.egg-info
