@@ -1,7 +1,7 @@
 from glob import glob
 from setuptools import setup, find_packages
 setup(name = 'worch-ups',
-      version = '0.2',
+      version = '0.3',
       description = 'Worch/waf tools and features for working with UPS.',
       author = 'Brett Viren',
       author_email = 'brett.viren@gmail.com',
