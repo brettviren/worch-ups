@@ -1,3 +1,5 @@
+import os
+import time
 from waflib.TaskGen import feature
 import orch.features
 
@@ -15,14 +17,28 @@ def configure(cfg):
         ups_version = '5.2.1',
     )
     orch.features.register_defaults(
-        'upstable',
-        ups_products_dir = '',
-        ups_product_subdir = '{package}/{version}', # maybe {package}/v{version_underscore} for some
-        ups_subdir = 'ups',                 # take relative to ups_product_subdir
-        ups_table_file = '{package}.table', # taken relative to ups_subdir
+        'upsprod',
+        # must be set in config
+        ups_products_dir = '',  
+        # the UPS product name may differ from the package
+        ups_product_name = '{package}',
+        # some places like wonky version strings
+        ups_product_version = 'v{version_underscore}',
+        # how to go from products directory to where the product's files are actually installed. 
+        ups_product_subdir = '{ups_product_name}/{ups_product_version}/{ups_flavor}{ups_quals_dashed}',
+        # where, under this subdir, is the table held
+        ups_table_dir = 'ups', 
+        # name of the table file
+        ups_table_file = '{ups_product_name}.table',
+        # the directory holding a UPS version file relative to ups_products_dir
+        ups_version_subdir = '{ups_product_name}/{ups_product_version}.version',
+        # the UPS version file name
+        ups_version_file = '{ups_flavor}{ups_quals_underscore}',
+        # ordered, colon-separated list of qualifier tags 
         ups_qualifiers = '',
+        ups_quals_underscore = '_', # always leading "_"
+        ups_quals_dashed ='',       # add leading "-" if set
     )
-
     return
 
 
@@ -52,20 +68,23 @@ def feature_upsinit(tgen):
 # /bin/bash -c 'source `pwd`/setups && ups declare hello v2_8 -f "Linux64bit+3.13-2.19" -r hello/v2_8 -m hello.table -M Linux64bit+3.13-2.19/ups'
 # 
 
-@feature('upstable')
-def feature_upstable(tgen):
+@feature('upsprod')
+def feature_upsprod(tgen):
     '''
+    Produce a UPS product's table and version files.
     '''
     w = tgen.worch
-    print sorted(w._config.keys())
 
     assert w.ups_products_dir
     assert w.ups_product_subdir
 
     repo = tgen.make_node(w.ups_products_dir)
     pdir = repo.make_node(w.ups_product_subdir)
-    udir = pdir.make_node(w.ups_subdir)
-    table_node = udir.make_node(w.ups_table_file)
+    tdir = pdir.make_node(w.ups_table_dir)
+    table_node = tdir.make_node(w.ups_table_file)
+
+    vdir = repo.make_node(w.ups_version_subdir)
+    version_node = vdir.make_node(w.ups_version_file)
 
     def wash_path(path, fromnode, noparent = True):
         'Turn absolute paths into ones relative to fromnode'
@@ -80,7 +99,7 @@ def feature_upstable(tgen):
     def upstable(task):
         preamble = w.format('''\
 File    = table
-Product = {package}
+Product = {ups_product_name}
 Group:
   Flavor = {ups_flavor}
   Qualifiers = "{ups_qualifiers}"
@@ -122,9 +141,33 @@ End:\n''')
         tf = task.outputs[0]
         tf.write(preamble + meats + postamble)
 
-    
-
     tgen.step('upstable',
               rule = upstable,
               update_outputs = True,
               target = table_node)
+
+
+    def upsversion(task):
+
+        text = w.format('''\
+FILE = version
+PRODUCT = {ups_product_name}
+VERSION = {ups_product_version}
+FLAVOR = {ups_flavor}
+QUALIFIERS = "{ups_qualifiers}"
+  DECLARER = {user}
+  DECLARED = {date}
+  MODIFIER = {user}
+  MODIFIED = {date}
+  PROD_DIR = {ups_product_subdir}
+  TABLE_DIR = {ups_table_dir}
+  TABLE_FILE = {ups_table_file}\n''',
+                           user=os.environ.get('USER','worch'), 
+                           date=time.asctime(time.gmtime()) + ' GMT')
+        tf = task.outputs[0]
+        tf.write(text)
+        
+    tgen.step('upsversion',
+              rule = upsversion,
+              update_outputs = True,
+              target = version_node)

@@ -7,11 +7,16 @@ import sys
 top = '.'
 out = 'tmp'
 
-if not os.path.exists('worch'):
-    assert 0 == os.system('git clone https://github.com/brettviren/worch.git')
-
-mydir = os.path.realpath('.')
-sys.path.insert(0,os.path.join(mydir,'worch'))
+### old way to set up worch environment: 
+# if not os.path.exists('worch'):
+#     assert 0 == os.system('git clone https://github.com/brettviren/worch.git')
+# mydir = os.path.realpath('.')
+# sys.path.insert(0,os.path.join(mydir,'worch'))
+## new way:
+# virtualenv venv
+# source venv/bin/activate
+# pip install git+git://github.com/brettviren/worch.git
+###
 
 def options(opt):
     opt.load('orchlib', tooldir='.')

@@ -3,6 +3,66 @@ worch-ups - worch tool/feature support for UPS operations
 This package provides worch/waf tools and features which may be used from a [[https://github.com/brettviren/worch][worch]] configuration to add support for producing [[https://cdcvs.fnal.gov/redmine/projects/ups][UPS]] "products".
 
 
+* UPS patterns
+
+UPS can be considered a database of software with a "primary key" consisting of four quantities:
+
+ - name :: a label that identifies the general software as it evolves throughout history
+ - version :: an identifier of the state of the software source at an one time
+ - flavor :: a canonical string indicating the platform on which the package may run
+ - qualifiers :: zero or more ordered tags used to differentiate an instance of the built software
+
+Together, these identify one "UPS product instance", or simply "product".
+
+The =ups= command can then use these quantities to locate the collection of files belonging to the associated product.  In particular it can emit shell commands for the purpose of "setting up" the shell environment for making use of the package.  Such setup and other instructions are kept in a "UPS table file" which is located via a "UPS version file"
+
+
+The basic arrangement with UPS (ignoring chains) is that an installed package is set up via walking these layers of indirection:
+
+#+BEGIN_SRC dot :cmd dot :cmdline -Tpng :file file-resolve.png :exports results 
+  digraph tree {
+          nvfq[label="Primary Key:\nName, Version,\nFlavor, Qualifiers"];
+          vfile[label="Version File"];
+          tfile[label="Table File"];
+          setup[label="Shell commands\nEnvironment setup"];
+          nvfq->vfile->tfile->setup;
+  }
+#+END_SRC
+
+#+RESULTS:
+[[file:file-resolve.png]]
+
+
+** Version Files
+
+A version file is primarily responsible for associating a product's "primary key" (the quadruple: name, version, flavor, qualifiers) with a "UPS table file".  They do this by naming elements of the path to the UPS table file which are then interpreted, along with some implicitly assumptions, into a full path.  These path elements can be named in a flexible (aka confusing) manner as [[http://www.fnal.gov/docs/products/ups/ReferenceManual/html/versionfiles.html][described in the UPS manual]].
+
+These version files may be written by hand or via the =ups command=.  This command allows the user to specify the path elements as command line arguments and it will apply some checks.  These checks will emit error messages that may not indicate what the problem actually is.  These problems are common:
+
+ - declaring a product that has already been declared
+
+ - declaring a product with a differing flavor that points to a UPS table file that is pointed to by another product and the UPS table file does not contain a section that corresponds to the new products "primary key".
+
+Take care when a version file is edited manually that the editor does not leave behind a backup file as UPS will happily assume it is a valid version file.
+
+** Table Files
+
+A table file maps the "primary key" to a block of instructions that may be interpreted by the "=ups=" command, typically for the purpose of emitting shell commands for setting environment variables.  A table file may contain multiple blocks.  Blocks may be identified as pertaining to a specific matching primary key or may be generic.  The blocks may define and reference variables.  The command language provides branching but not looping.
+
+** Layout patterns
+
+Given the description above there is some flexibility in where version and table files are placed and named.  
+
+The dominant pattern used currently by Fermilab is to have a monolithic UPS table file for all products of a given name/version.  This requires a UPS table to be written that includes sections for *all* products which are to ever be created and that this identical file is included in each and every product distribution tarball.
+
+A better pattern is one that makes use of the flexibility UPS provides and which implements a more modular, independent layout.  This places the table file in a location which unique to the full primary key and the file contents includes just the blocks relevant to the product installed at that location.
+
+While this package can allow for differing patterns, the default is the more modular layout.
+
+#+BEGIN_EXAMPLE
+/path/to/products/<name>/<version>/<flavor>-<qualifiers>/ups/<name>.table
+#+END_EXAMPLE
+
 
 * Development
 
