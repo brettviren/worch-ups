@@ -1,6 +1,7 @@
+from glob import glob
 from setuptools import setup, find_packages
 setup(name = 'worch-ups',
-      version = '0.1',
+      version = '0.2',
       description = 'Worch/waf tools and features for working with UPS.',
       author = 'Brett Viren',
       author_email = 'brett.viren@gmail.com',
@@ -15,5 +16,7 @@ setup(name = 'worch-ups',
       dependency_links = [
           'http://github.com/brettviren/worch/tarball/master#egg=worch-1.0',
           'http://github.com/brettviren/python-ups-utils/tarball/master#egg=ups_utils-0.1',
-      ]
+      ],
+      data_files = [('share/worch/config/examples', glob('examples/*.cfg')),],
 )
+
