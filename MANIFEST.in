@@ -1,1 +1,2 @@
 include examples/*.cfg
+include requirements.txt
