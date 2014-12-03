@@ -78,6 +78,8 @@ def feature_upsprod(tgen):
     assert w.ups_products_dir
     assert w.ups_product_subdir
 
+    idir = tgen.make_node(w.install_dir)
+
     repo = tgen.make_node(w.ups_products_dir)
     pdir = repo.make_node(w.ups_product_subdir)
     tdir = pdir.make_node(w.ups_table_dir)
@@ -125,7 +127,8 @@ End:\n''')
             meat.append(s)
 
         for var, val, oper in tgen.worch.exports():
-            relval = wash_path(val, pdir)
+            #relval = wash_path(val, pdir)
+            relval = wash_path(val, idir)
             if relval:
                 val = '${UPS_PROD_DIR}/' + relval
             if oper == 'set':
@@ -176,10 +179,15 @@ QUALIFIERS = "{ups_qualifiers}"
     import tarfile
     def upspack(task):
         tf = tarfile.open(task.outputs[0].abspath(), mode='w:bz2')
+        # ups version file
         tf.add(task.inputs[0].abspath(),
                arcname=wash_path(task.inputs[0].abspath(), repo))
+        # ups table file
         tf.add(pdir.abspath(),
-               arcname=wash_path(pdir.abspath(), repo), recursive=True)
+               arcname=wash_path(table_node.abspath(), repo))
+        # installation dir
+        tf.add(idir.abspath(),
+               arcname = wash_path(pdir.abspath(), repo), recursive=True)
     tgen.step('upspack',
               rule = upspack,
               source = [version_node, table_node, tgen.control_node('install')],
