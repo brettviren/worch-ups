@@ -80,4 +80,45 @@ To set up to develop this package:
   > done
 #+END_EXAMPLE
 
-Not, the version of "waf" that is available in =PATH= after this is probably not going to work.
+Note, the version of "waf" that is available in =PATH= after this is probably [[https://mail.google.com/mail/u/0/?tab=cm#search/waf/1481d25325722d0a][not going to work]].  Until I get around to test that fix, here is a dirty cheat:
+
+#+BEGIN_EXAMPLE
+  $ cp worch/waf venv/bin/waf
+  $ waf --version
+  waf 1.7.16 (73c1705078f8c9c51a33e20f221a309d5a94b5e1)
+#+END_EXAMPLE
+
+Then test with:
+
+#+BEGIN_EXAMPLE
+  $ cp worch-ups/wscript .
+  $ waf --orch-config=worch-ups/examples/gnups-coincident.cfg --prefix=install configure
+  $ waf
+  $ ls tmp/upspack/
+  bc-1.06-Linux64bit+3.13-2.19.tar.bz2  
+  hello-2.8-Linux64bit+3.13-2.19-x0-opt.tar.bz2
+#+END_EXAMPLE
+
+This will:
+
+1) download UPS source
+2) build it
+3) create a UPS product area
+4) build and install some GNU programs (=hello= and =bc=)
+5) generate and create UPS table files for them
+6) make UPS tarballs with UPS table and version files
+
+To exercise UPS in a fresh shell do:
+
+#+BEGIN_EXAMPLE
+  $ source install/setups
+  $ ups list -aK+
+  "bc" "v1_06" "Linux64bit+3.13-2.19" "" "" 
+  "hello" "v2_8" "Linux64bit+3.13-2.19" "opt:x0" "" 
+  "ups" "v5_1_2" "Linux64bit+3.13-2.19" "" "current" 
+  $ setup hello v2_8 -q opt:x0
+  $ hello
+  Hello, world!
+#+END_EXAMPLE
+
+

@@ -14,7 +14,7 @@ def configure(cfg):
     orch.features.register_defaults(
         'upsinit',
         ups_products_dir = '',
-        ups_version = '5.2.1',
+        ups_version = '5.1.2',
     )
     orch.features.register_defaults(
         'upsprod',
@@ -40,7 +40,7 @@ def configure(cfg):
         ups_quals_dashed ='',       # add leading "-" if set
     )
     return
-
+        
 
 # tool interface
 def build(bld):
@@ -171,3 +171,18 @@ QUALIFIERS = "{ups_qualifiers}"
               rule = upsversion,
               update_outputs = True,
               target = version_node)
+
+    # this functionality should be largely moved into python-ups-utils
+    import tarfile
+    def upspack(task):
+        tf = tarfile.open(task.outputs[0].abspath(), mode='w:bz2')
+        tf.add(task.inputs[0].abspath(),
+               arcname=wash_path(task.inputs[0].abspath(), repo))
+        tf.add(pdir.abspath(),
+               arcname=wash_path(pdir.abspath(), repo), recursive=True)
+    tgen.step('upspack',
+              rule = upspack,
+              source = [version_node, table_node, tgen.control_node('install')],
+              target = w.format('upspack/{ups_product_name}-{version}-{ups_flavor}{ups_quals_dashed}.tar.bz2'))
+
+
