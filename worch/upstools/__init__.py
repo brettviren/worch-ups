@@ -2,6 +2,7 @@ import os
 import time
 from waflib.TaskGen import feature
 import orch.features
+import tarfile
 
 # from https://github.com/brettviren/python-ups-utils
 try:
@@ -62,6 +63,17 @@ def feature_upsinit(tgen):
               rule = upsinit, 
               update_outputs = True,
               target = setups_file)
+
+    def upspack(task):
+        tf = tarfile.open(task.outputs[0].abspath(), mode='w:bz2')
+        for thing in ['setup', 'setups', 'setups_layout', 'ups', '.upsfiles']:
+            tf.add(os.path.join(products_dir.abspath(), thing),
+                   arcname = thing, recursive = True)
+
+    tgen.step('upspack',
+              rule = upspack,
+              source  = setups_file,
+              target = tgen.worch.format('upspack/ups-{ups_version}-{ups_flavor}.tar.bz2'))
 
     pass
 
@@ -176,18 +188,25 @@ QUALIFIERS = "{ups_qualifiers}"
               target = version_node)
 
     # this functionality should be largely moved into python-ups-utils
-    import tarfile
     def upspack(task):
         tf = tarfile.open(task.outputs[0].abspath(), mode='w:bz2')
-        # ups version file
-        tf.add(task.inputs[0].abspath(),
-               arcname=wash_path(task.inputs[0].abspath(), repo))
-        # ups table file
-        tf.add(pdir.abspath(),
-               arcname=wash_path(table_node.abspath(), repo))
         # installation dir
         tf.add(idir.abspath(),
                arcname = wash_path(pdir.abspath(), repo), recursive=True)
+
+        # if product dirs do not coincide with install dirs then the
+        # version and table files need to be explicitly added.
+
+        # ups version file
+        name = wash_path(task.inputs[0].abspath(), repo)
+        if name not in tf.getnames():
+            tf.add(task.inputs[0].abspath(), arcname=name)
+
+        # ups table file
+        name = wash_path(table_node.abspath(), repo)
+        if name not in tf.getnames():
+            tf.add(table_node.abspath(), arcname=name)
+
     tgen.step('upspack',
               rule = upspack,
               source = [version_node, table_node, tgen.control_node('install')],

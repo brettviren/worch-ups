@@ -8,3 +8,4 @@ build
 dist
 *.egg-info
 test_gnups_coincident
+test_gnups_distinct
