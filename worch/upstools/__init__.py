@@ -21,24 +21,34 @@ def configure(cfg):
         'upsprod',
         # must be set in config
         ups_products_dir = '',  
+
         # the UPS product name may differ from the package
         ups_product_name = '{package}',
         # some places like wonky version strings
         ups_product_version = 'v{version_underscore}',
-        # how to go from products directory to where the product's files are actually installed. 
-        ups_product_subdir = '{ups_product_name}/{ups_product_version}/{ups_flavor}{ups_quals_dashed}',
         # where, under this subdir, is the table held
         ups_table_dir = 'ups', 
         # name of the table file
         ups_table_file = '{ups_product_name}.table',
         # the directory holding a UPS version file relative to ups_products_dir
         ups_version_subdir = '{ups_product_name}/{ups_product_version}.version',
-        # the UPS version file name
-        ups_version_file = '{ups_flavor}{ups_quals_underscore}',
+
         # ordered, colon-separated list of qualifier tags 
         ups_qualifiers = '',
-        ups_quals_underscore = '_', # always leading "_"
-        ups_quals_dashed ='',       # add leading "-" if set
+        ups_quals_dashed = 'UPS_QUALS_DASHED',
+        ups_quals_underscore = 'UPS_QUALS_UNDERSCORE',
+
+        # if you set qualifiers you probably want to modify the following also
+
+        # the UPS version file name
+        ups_version_file = '{ups_flavor}{ups_quals_dashed}',
+
+        # how to go from products directory to where the product's files are actually installed. 
+        ups_product_subdir = '{ups_product_name}/{ups_product_version}/{ups_flavor}{ups_quals_underscore}',
+
+        # who to name the UPS tarball package
+        ups_tarball_package = '{ups_product_name}-{version}-{ups_flavor}{ups_quals_dashed}.tar.bz2'
+
     )
     return
         
@@ -48,16 +58,35 @@ def build(bld):
     pass
 
 
+def monkey_worch(w):
+    'Evil monkey massage to set dependent variables to a functional default'
+    qd = w.ups_qualifiers.replace(':','-') or ''
+    if qd:
+        qd = '-' + qd
+    qu = w.ups_qualifiers.replace(':','_')
+    qu = '_' + qu               # always leading underscore
+
+    for k,v in w._config.items():
+        newv = v.replace('UPS_QUALS_DASHED',qd).replace('UPS_QUALS_UNDERSCORE',qu)
+        #print '%s: "%s" "%s" "%s" -> "%s"' % (k, qd,qu,v,newv)
+        if v == newv:
+            continue
+        w._config[k] = newv
+    return w
+
+
 @feature('upsinit')
 def feature_upsinit(tgen):
     '''
     Initialize a UPS products area including installing a UPS package.
     '''
-    products_dir = tgen.make_node(tgen.worch.ups_products_dir)
+    w = monkey_worch(tgen.worch)
+
+    products_dir = tgen.make_node(w.ups_products_dir)
     setups_file = products_dir.make_node('setups')
 
     def upsinit(task):
-        ups.commands.install(tgen.worch.ups_version, products_dir.abspath())
+        ups.commands.install(w.ups_version, products_dir.abspath())
 
     tgen.step('upsinit', 
               rule = upsinit, 
@@ -73,7 +102,7 @@ def feature_upsinit(tgen):
     tgen.step('upspack',
               rule = upspack,
               source  = setups_file,
-              target = tgen.worch.format('upspack/ups-{ups_version}-{ups_flavor}.tar.bz2'))
+              target = w.format('upspack/ups-{ups_version}-{ups_flavor}.tar.bz2'))
 
     pass
 
@@ -85,7 +114,7 @@ def feature_upsprod(tgen):
     '''
     Produce a UPS product's table and version files.
     '''
-    w = tgen.worch
+    w = monkey_worch(tgen.worch)
 
     assert w.ups_products_dir
     assert w.ups_product_subdir
@@ -138,7 +167,7 @@ End:\n''')
                          deppkg=deppkg, depver='v'+o.version_underscore, depquals=depquals)
             meat.append(s)
 
-        for var, val, oper in tgen.worch.exports():
+        for var, val, oper in w.exports():
             #relval = wash_path(val, pdir)
             relval = wash_path(val, idir)
             if relval:
@@ -210,6 +239,6 @@ QUALIFIERS = "{ups_qualifiers}"
     tgen.step('upspack',
               rule = upspack,
               source = [version_node, table_node, tgen.control_node('install')],
-              target = w.format('upspack/{ups_product_name}-{version}-{ups_flavor}{ups_quals_dashed}.tar.bz2'))
+              target = w.format('upspack/{ups_tarball_package}'))
 
 

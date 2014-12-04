@@ -22,7 +22,7 @@ $waf --version
 $waf --prefix=install --orch-config="$srcdir/examples/gnups-distinct.cfg" configure 
 $waf
 
-
+exit 0
 
 upsproducts=`pwd`/upsproducts
 
