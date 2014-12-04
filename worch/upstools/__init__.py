@@ -162,7 +162,7 @@ End:\n''')
             o = w.others[deppkg]
             depquals = ''
             if o.ups_qualifiers:
-                depquals = ' -q ' + o.ups_qualifers
+                depquals = ' -q ' + o.ups_qualifiers
             s = w.format('setupRequired( {deppkg} {depver} {depquals} )',
                          deppkg=deppkg, depver='v'+o.version_underscore, depquals=depquals)
             meat.append(s)
