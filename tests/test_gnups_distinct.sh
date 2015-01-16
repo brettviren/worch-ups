@@ -10,30 +10,25 @@ echo "Working in $test_work_dir"
 
 if [ ! -d "$test_work_dir" ] ; then
    mkdir -p "$test_work_dir"
+   virtualenv $test_work_dir/venv
 fi
+source $test_work_dir/venv/bin/activate
+if [ -n "$(pip list | grep worch-ups)" ] ; then
+    pip uninstall -y worch-ups
+fi
+python setup.py sdist
+pip install $(ls -t dist/worch-ups-*.tar.gz | head -1)
+
 cd "$test_work_dir"
 
 if [ ! -f wscript ] ; then
     cp $srcdir/wscript .
 fi
 
-waf="$srcdir/waf"
-$waf --version
-$waf --prefix=install --orch-config="$srcdir/examples/gnups-distinct.cfg" configure 
-$waf
+if [ ! -x install/generic/hello/2.8/bin/hello ] ; then
+    waf --version
+    waf --prefix=install --orch-config="$srcdir/examples/gnups-distinct.cfg" configure 
+    waf
+fi
 
-exit 0
-
-upsproducts=`pwd`/upsproducts
-
-# this should be in PATH in virtualenv since worch-ups depends on ups-utils
-urman -z $upsproducts init || exit 1
-
-for tarball in tmp/upspack/*.tar.bz2
-do
-    echo "$tarball --> $upsproducts"
-    tar -C $upsproducts -xf $tarball 
-done
-
-/bin/bash -c "source $upsproducts/setups && ups list -aK+" || exit 1
-/bin/bash -c "source $upsproducts/setups && setup hello v2_8 -q x0:opt && which hello && hello" || exit 1
+$testdir/test_gnups_ups_both.sh
