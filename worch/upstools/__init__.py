@@ -80,7 +80,8 @@ def feature_upsinit(tgen):
     '''
     Initialize a UPS products area including installing a UPS package.
     '''
-    w = monkey_worch(tgen.worch)
+    #w = monkey_worch(tgen.worch)
+    w = tgen.worch
 
     products_dir = tgen.make_node(w.ups_products_dir)
     setups_file = products_dir.make_node('setups')
@@ -167,7 +168,7 @@ End:\n''')
                          deppkg=deppkg, depver='v'+o.version_underscore, depquals=depquals)
             meat.append(s)
 
-        for var, val, oper in w.exports():
+        for var, val, oper in w.userenvs():
             #relval = wash_path(val, pdir)
             relval = wash_path(val, idir)
             if relval:
